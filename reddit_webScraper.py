@@ -44,7 +44,7 @@ for submission in sort_hot_subreddit:
     topics_dict["flair"].append(submission.link_flair_text)
 
 
-data_to_csv = topics_data.to_csv('FILENAME.csv', index = False) #convert data to a CSV file
+data_to_csv = topics_data.to_csv('programmingChallenges_reddit.csv', index = False) #convert data to a CSV file
 json_str = json.dumps(topics_dict).encode('utf-8') #convert data to a JSON file
 json_str_prettyPrint = json.dumps(topics_dict, sort_keys = True, indent = 2, separators=("\n", ";")) #set JSON to pretty printing
 
