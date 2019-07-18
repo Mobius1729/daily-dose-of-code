@@ -1,0 +1,1426 @@
+title,score,id,numOfComments,created,body
+[2019-07-15] Challenge #379 [Easy] Progressive taxation,141,cdieag,53,1563231038.0,"# Challenge
+
+The nation of Examplania has the following income tax brackets:
+
+    income cap      marginal tax rate
+      ¤10,000           0.00 (0%)
+      ¤30,000           0.10 (10%)
+     ¤100,000           0.25 (25%)
+        --              0.40 (40%)
+
+If you're not familiar with how tax brackets work, see the section below for an explanation.
+
+Given a whole-number income amount up to ¤100,000,000, find the amount of tax owed in Examplania. Round down to a whole number of ¤.
+
+# Examples
+
+    tax(0) => 0
+    tax(10000) => 0
+    tax(10009) => 0
+    tax(10010) => 1
+    tax(12000) => 200
+    tax(56789) => 8697
+    tax(1234567) => 473326
+
+# Optional improvement
+
+One way to improve your code is to make it easy to swap out different tax brackets, for instance by having the table in an input file. If you do this, you may assume that both the income caps and marginal tax rates are in increasing order, the highest bracket has no income cap, and all tax rates are whole numbers of percent (no more than two decimal places).
+
+However, because this is an Easy challenge, this part is optional, and you may hard code the tax brackets if you wish.
+
+# How tax brackets work
+
+A tax bracket is a range of income based on the income caps, and each tax bracket has a corresponding marginal tax rate, which applies to income within the bracket. In our example, the tax bracket for the range ¤10,000 to ¤30,000 has a marginal tax rate of 10%. Here's what that means for each bracket:
+
+* If your income is less than ¤10,000, you owe 0 income tax.
+* If your income is between ¤10,000 and ¤30,000, you owe 10% income tax on the income that exceeds ¤10,000. For instance, if your income is ¤18,000, then your income in the 10% bracket is ¤8,000. So your income tax is 10% of ¤8,000, or ¤800.
+* If your income is between ¤30,000 and ¤100,000, then you owe 10% of your income between ¤10,000 and ¤30,000, plus 25% of your income over ¤30,000.
+* And finally, if your income is over ¤100,000, then you owe 10% of your income from ¤10,000 to ¤30,000, plus 25% of your income from ¤30,000 to ¤100,000, plus 40% of your income above ¤100,000.
+
+One aspect of progressive taxation is that increasing your income will never decrease the amount of tax that you owe, or your overall tax rate (except for rounding).
+
+# Optional bonus
+
+The overall tax rate is simply the total tax divided by the total income. For example, an income of ¤256,250 has an overall tax of ¤82,000, which is an overall tax rate of exactly 32%:
+
+    82000 = 0.00 × 10000 + 0.10 × 20000 + 0.25 × 70000 + 0.40 × 156250
+    82000 = 0.32 × 256250
+
+Given a target overall tax rate, find the income amount that would be taxed at that overall rate in Examplania:
+
+    overall(0.00) => 0 (or anything up to 10000)
+    overall(0.06) => 25000
+    overall(0.09) => 34375
+    overall(0.32) => 256250
+    overall(0.40) => NaN (or anything to signify that no such income value exists)
+
+You may get somewhat different answers because of rounding, but as long as it's close that's fine.
+
+The simplest possibility is just to iterate and check the overall tax rate for each possible income. That works fine, but if you want a performance boost, check out binary search. You can also use algebra to reduce the number of calculations needed; just make it so that your code still gives correct answers if you swap out a different set of tax brackets."
+[2019-05-20] Challenge #378 [Easy] The Havel-Hakimi algorithm for graph realization,211,bqy1cf,212,1558399781.0,"It was a dark and stormy night. Detective Havel and Detective Hakimi arrived at the scene of the crime.
+
+Other than the detectives, there were 10 people present. They asked the first person, ""out of the 9 other people here, how many had you already met before tonight?"" The person answered ""5"". They asked the same question of the second person, who answered ""3"". And so on. The 10 answers they got from the 10 people were:
+
+    5 3 0 2 6 2 0 7 2 5
+
+The detectives looked at the answers carefully and deduced that there was an inconsistency, and that somebody must be lying. (For the purpose of this challenge, assume that nobody makes mistakes or forgets, and if X has met Y, that means Y has also met X.)
+
+Your challenge for today is, given a sequence of answers to the question ""how many of the others had you met before tonight?"", apply the Havel-Hakimi algorithm to determine whether or not it's possible that everyone was telling the truth.
+
+If you're feeling up to it, skip ahead to the Challenge section below. Otherwise, try as many of the optional warmup questions as you want first, before attempting the full challenge.
+
+# Optional Warmup 1: eliminating 0's.
+
+Given a sequence of answers, return the same set of answers with all the 0's removed.
+
+    warmup1([5, 3, 0, 2, 6, 2, 0, 7, 2, 5]) => [5, 3, 2, 6, 2, 7, 2, 5]
+    warmup1([4, 0, 0, 1, 3]) => [4, 1, 3]
+    warmup1([1, 2, 3]) => [1, 2, 3]
+    warmup1([0, 0, 0]) => []
+    warmup1([]) => []
+
+If you want to reorder the sequence as you do this, that's fine. For instance, given `[4, 0, 0, 1, 3]`, then you may return `[4, 1, 3]` or `[1, 3, 4]` or `[4, 3, 1]` or any other ordering of these numbers.
+
+# Optional Warmup 2: descending sort
+
+Given a sequence of answers, return the sequence sorted in descending order, so that the first number is the largest and the last number is the smallest.
+
+    warmup2([5, 1, 3, 4, 2]) => [5, 4, 3, 2, 1]
+    warmup2([0, 0, 0, 4, 0]) => [4, 0, 0, 0, 0]
+    warmup2([1]) => [1]
+    warmup2([]) => []
+
+# Optional Warmup 3: length check
+
+Given a number `N` and a sequence of answers, return true if `N` is greater than the number of answers (i.e. the length of the sequence), and false if `N` is less than or equal to the number of answers. For instance, given 7 and [6, 5, 5, 3, 2, 2, 2], you would return false, because 7 is less than or equal to 7.
+
+    warmup3(7, [6, 5, 5, 3, 2, 2, 2]) => false
+    warmup3(5, [5, 5, 5, 5, 5]) => false
+    warmup3(5, [5, 5, 5, 5]) => true
+    warmup3(3, [1, 1]) => true
+    warmup3(1, []) => true
+    warmup3(0, []) => false
+
+# Optional Warmup 4: front elimination
+
+Given a number `N` and a sequence in descending order, subtract 1 from each of the first `N` answers in the sequence, and return the result. For instance, given `N = 4` and the sequence `[5, 4, 3, 2, 1]`, you would subtract 1 from each of the first 4 answers (5, 4, 3, and 2) to get 4, 3, 2, and 1. The rest of the sequence (1) would not be affected:
+
+    warmup4(4, [5, 4, 3, 2, 1]) => [4, 3, 2, 1, 1]
+    warmup4(11, [14, 13, 13, 13, 12, 10, 8, 8, 7, 7, 6, 6, 4, 4, 2]) => [13, 12, 12, 12, 11, 9, 7, 7, 6, 6, 5, 6, 4, 4, 2]
+    warmup4(1, [10, 10, 10]) => [9, 10, 10]
+    warmup4(3, [10, 10, 10]) => [9, 9, 9]
+    warmup4(1, [1]) => [0]
+
+You may assume that `N` is greater than 0, and no greater than the length of the sequence. Like in warmup 1, it's okay if you want to reorder the answers in your result.
+
+# Challenge: the Havel-Hakimi algorithm
+
+Perform the Havel-Hakimi algorithm on a given sequence of answers. This algorithm will return true if the answers are consistent (i.e. it's possible that everyone is telling the truth) and false if the answers are inconsistent (i.e. someone must be lying):
+
+1. Remove all 0's from the sequence (i.e. `warmup1`).
+2. If the sequence is now empty (no elements left), stop and return true.
+3. Sort the sequence in descending order (i.e. `warmup2`).
+4. Remove the first answer (which is also the largest answer, or tied for the largest) from the sequence and call it `N`. The sequence is now 1 shorter than it was after the previous step.
+5. If `N` is greater than the length of this new sequence (i.e. `warmup3`), stop and return false.
+6. Subtract 1 from each of the first `N` elements of the new sequence (i.e. `warmup4`).
+7. Continue from step 1 using the sequence from the previous step.
+
+Eventually you'll either return true in step 2, or false in step 5.
+
+You don't have to follow these steps exactly: as long as you return the right answer, that's fine. Also, if you answered the warmup questions, you may use your warmup solutions to build your challenge solution, but you don't have to.
+
+    hh([5, 3, 0, 2, 6, 2, 0, 7, 2, 5]) => false
+    hh([4, 2, 0, 1, 5, 0]) => false
+    hh([3, 1, 2, 3, 1, 0]) => true
+    hh([16, 9, 9, 15, 9, 7, 9, 11, 17, 11, 4, 9, 12, 14, 14, 12, 17, 0, 3, 16]) => true
+    hh([14, 10, 17, 13, 4, 8, 6, 7, 13, 13, 17, 18, 8, 17, 2, 14, 6, 4, 7, 12]) => true
+    hh([15, 18, 6, 13, 12, 4, 4, 14, 1, 6, 18, 2, 6, 16, 0, 9, 10, 7, 12, 3]) => false
+    hh([6, 0, 10, 10, 10, 5, 8, 3, 0, 14, 16, 2, 13, 1, 2, 13, 6, 15, 5, 1]) => false
+    hh([2, 2, 0]) => false
+    hh([3, 2, 1]) => false
+    hh([1, 1]) => true
+    hh([1]) => false
+    hh([]) => true
+
+# Detailed example
+
+Here's the first pass through the algorithm using the original example:
+
+* `[5, 3, 0, 2, 6, 2, 0, 7, 2, 5]`  - Starting sequence
+* `[5, 3, 2, 6, 2, 7, 2, 5]`  - After step 1, removing 0's.
+* Step 2: This sequence is not empty, so go on to step 3.
+* `[7, 6, 5, 5, 3, 2, 2, 2]`  - After step 3, sorting in descending order.
+* `[6, 5, 5, 3, 2, 2, 2]` - After step 4, removing the first answer `N = 7`.
+* Step 5: N (7) is less than or equal to the number of answers remaining in the sequence (7), so go on to step 6.
+* `[5, 4, 4, 2, 1, 1, 1]` - After step 6, subtracting 1 from each of the first 7 answers (which is all of them in this case).
+
+At this point you would start over at step 1 with the sequence `[5, 4, 4, 2, 1, 1, 1]`. After your second pass through the algorithm, your sequence will be `[3, 3, 1, 0, 0, 1]`, so start back at step 1 with this sequence. After your third pass you'll have `[2, 0, 0]`. On your fourth pass, you'll stop at step 5, because you'll have `N = 2` and an empty sequence (`[]`), and 2 > 0, so you will return false."
+[2019-04-08] Challenge #377 [Easy] Axis-aligned crate packing,153,bazy5j,157,1554790579.0,"# Description
+
+You have a 2-dimensional rectangular crate of size X by Y, and a bunch of boxes, each of size x by y. The dimensions are all positive integers.
+
+Given X, Y, x, and y, determine how many boxes can fit into a single crate if they have to be placed so that the x-axis of the boxes is aligned with the x-axis of the crate, and the y-axis of the boxes is aligned with the y-axis of the crate. That is, you can't rotate the boxes. The best you can do is to build a rectangle of boxes as large as possible in each dimension.
+
+For instance, if the crate is size X = 25 by Y = 18, and the boxes are size x = 6 by y = 5, then the answer is 12. You can fit 4 boxes along the x-axis (because 6\*4 <= 25), and 3 boxes along the y-axis (because 5\*3 <= 18), so in total you can fit 4*3 = 12 boxes in a rectangle.
+
+# Examples
+
+    fit1(25, 18, 6, 5) => 12
+    fit1(10, 10, 1, 1) => 100
+    fit1(12, 34, 5, 6) => 10
+    fit1(12345, 678910, 1112, 1314) => 5676
+    fit1(5, 100, 6, 1) => 0
+
+# Optional bonus `fit2`
+
+You upgrade your packing robot with the latest in packing technology: turning stuff. You now have the option of rotating *all* boxes by 90 degrees, so that you can treat a set of 6-by-5 boxes as a set of 5-by-6 boxes. You do **not** have the option of rotating some of the boxes but not others.
+
+    fit2(25, 18, 6, 5) => 15
+    fit2(12, 34, 5, 6) => 12
+    fit2(12345, 678910, 1112, 1314) => 5676
+    fit2(5, 5, 3, 2) => 2
+    fit2(5, 100, 6, 1) => 80
+    fit2(5, 5, 6, 1) => 0
+
+*Hint: is there an easy way to define `fit2` in terms of `fit1`?*
+
+Note that this is not the maximum possible number of boxes you could get if you rotated them independently. For instance, if you're fitting 3-by-2 boxes into a 5-by-5 crate, it's possible to fit 4 by varying the orientations, but `fit2(5, 5, 3, 2)` is 2, not 4. Handling the general case is much more complicated, and beyond the scope of today's challenge.
+
+# Optional bonus `fit3`
+
+You upgrade your warehouse to the third dimension. You're now given six parameters, X, Y, Z, x, y, and z. That is, you're given the X, Y, and Z dimensions of the crate, and the x, y, and z dimensions of the boxes. There are now six different possible orientations of the boxes. Again, boxes cannot be rotated independently: they all have to have the same orientation.
+
+    fit3(10, 10, 10, 1, 1, 1) => 1000
+    fit3(12, 34, 56, 7, 8, 9) => 32
+    fit3(123, 456, 789, 10, 11, 12) => 32604
+    fit3(1234567, 89101112, 13141516, 171819, 202122, 232425)) => 174648
+
+# Optional bonus `fitn`
+
+You upgrade your warehouse to the Nth dimension. Now you take a list of N crate dimensions, and N box dimensions. Assume that the boxes may be rotated in any of N! orientations so that each axis of the crate aligns with a different axis of the boxes. Again, boxes cannot be rotated independently.
+
+    fitn([3, 4], [1, 2]) => 6
+    fitn([123, 456, 789], [10, 11, 12]) => 32604
+    fitn([123, 456, 789, 1011, 1213, 1415], [16, 17, 18, 19, 20, 21]) => 1883443968
+
+EDIT: if you want even more of a challenge, do this in fewer than O(N!) operations. There's no specific time goal, but my Python program finds the following solution for N = 20 in about 10 seconds:
+
+    fitn([180598, 125683, 146932, 158296, 171997, 204683, 193694, 216231, 177673, 169317, 216456, 220003, 165939, 205613, 152779, 177216, 128838, 126894, 210076, 148407], [1984, 2122, 1760, 2059, 1278, 2017, 1443, 2223, 2169, 1502, 1274, 1740, 1740, 1768, 1295, 1916, 2249, 2036, 1886, 2010]) => 4281855455197643306306491981973422080000"
+[2019-03-13] Challenge #376 [Intermediate] The Revised Julian Calendar,96,b0nuoh,78,1552522689.0,"# Background
+
+[The Revised Julian Calendar](https://www.timeanddate.com/calendar/revised-julian-calendar.html) is a calendar system very similar to the familiar Gregorian Calendar, but slightly more accurate in terms of average year length. The Revised Julian Calendar has a leap day on Feb 29th of leap years as follows:
+
+* Years that are evenly divisible by 4 are leap years.
+* Exception: Years that are evenly divisible by 100 are not leap years.
+* Exception to the exception: Years for which the remainder when divided by 900 is either 200 or 600 are leap years.
+
+For instance, 2000 is an exception to the exception: the remainder when dividing 2000 by 900 is 200. So 2000 is a leap year in the Revised Julian Calendar.
+
+# Challenge
+
+Given two positive year numbers (with the second one greater than or equal to the first), find out how many leap days (Feb 29ths) appear between Jan 1 of the first year, and Jan 1 of the second year in the Revised Julian Calendar. This is equivalent to asking how many leap years there are in the interval between the two years, including the first but excluding the second.
+
+    leaps(2016, 2017) => 1
+    leaps(2019, 2020) => 0
+    leaps(1900, 1901) => 0
+    leaps(2000, 2001) => 1
+    leaps(2800, 2801) => 0
+    leaps(123456, 123456) => 0
+    leaps(1234, 5678) => 1077
+    leaps(123456, 7891011) => 1881475
+
+For this challenge, you must handle very large years efficiently, much faster than checking each year in the range.
+
+    leaps(123456789101112, 1314151617181920) => 288412747246240
+
+# Optional bonus
+
+Some day in the distant future, the Gregorian Calendar and the Revised Julian Calendar will agree that the day is Feb 29th, but they'll disagree about what year it is. Find the first such year (efficiently)."
+[2019-02-15] Challenge #375 [Hard] Graph of Thrones,112,aqwvxo,51,1550268475.0,"# Description
+
+We'll focus in this challenge on what's called a _complete graph_, wherein every node is expressly connected to every other node. We'll also work assuming an undirected graph, that relationships are reciprocal. 
+
+In social network analysis, you can analyze for _structural balance_ - a configuration wherein you'll find local stability. The easy one is when everyone enjoys a positive relationship with everyone else - they're all friends. Another structurally balanced scenario is when you have - in a graph of three nodes - two friends and each with a shared enemy, so one positive relationship and two negative ones. 
+
+With larger graphs, you can continue this analysis by analyzing every three node subgraph and ensuring it has those properties - all positive or one positive and two negative relationsgips. 
+
+A structurally balanced graph doesn't indicate complete future stability, just local stability - remember, factions can arise in these networks, akin to the Axis and Allies scenario of WW1 and WW2. 
+
+Today's challenge is to take a graph and identify if the graph is structurally balanced. This has great applicability to social network analysis, and can easily be applied to stuff like fictional universes like the Game of Thrones and the real world based on news events. 
+
+# Example Input
+
+You'll be given a graph in the following format: the first line contains two integers, _N_ and _M_, telling you how many nodes and edges to load, respectively. The next _M_ lines tell you relationships, positive (friendly, denoted by `++`) or negative (foes, denoted by `--`). Example (from a subset of the Legion of Doom and Justice League):
+
+    6 15
+    Superman ++ Green Lantern
+    Superman ++ Wonder Woman
+    Superman -- Sinestro
+    Superman -- Cheetah
+    Superman -- Lex Luthor
+    Green Lantern ++ Wonder Woman
+    Green Lantern -- Sinestro
+    Green Lantern -- Cheetah
+    Green Lantern -- Lex Luthor
+    Wonder Woman -- Sinestro
+    Wonder Woman -- Cheetah
+    Wonder Woman -- Lex Luthor
+    Sinestro ++ Cheetah
+    Sinestro ++ Lex Luthor
+    Cheetah ++ Lex Luthor
+
+# Example Output
+
+Your program should emit if the graph is structurally balanced or not. Example:
+
+    balanced
+
+# Challenge Input
+
+This is the Game of Thrones Season 7 house list I found via [this list of alliances on the Vulture website](http://www.vulture.com/2017/08/game-of-thrones-season-7-alliances.html) - I don't watch GoT so I have no idea if I captured this right. 
+
+    120 16
+    Daenerys Targaryen ++ Jon Snow
+    Daenerys Targaryen ++ Tyrion Lannister
+    Daenerys Targaryen ++ Varys
+    Daenerys Targaryen ++ Jorah Mormont
+    Daenerys Targaryen ++ Beric Dondarrion
+    Daenerys Targaryen ++ Sandor “the Hound” Clegane
+    Daenerys Targaryen ++ Theon and Yara Greyjoy
+    Daenerys Targaryen -- Sansa Stark
+    Daenerys Targaryen -- Arya Stark
+    Daenerys Targaryen -- Bran Stark
+    Daenerys Targaryen -- The Lords of the North and the Vale
+    Daenerys Targaryen -- Littlefinger
+    Daenerys Targaryen -- Cersei Lannister
+    Daenerys Targaryen -- Jaime Lannister
+    Daenerys Targaryen -- Euron Greyjoy
+    Jon Snow ++ Tyrion Lannister
+    Jon Snow ++ Varys
+    Jon Snow ++ Jorah Mormont
+    Jon Snow ++ Beric Dondarrion
+    Jon Snow ++ Sandor “the Hound” Clegane
+    Jon Snow -- Theon and Yara Greyjoy
+    Jon Snow -- Sansa Stark
+    Jon Snow -- Arya Stark
+    Jon Snow -- Bran Stark
+    Jon Snow -- The Lords of the North and the Vale
+    Jon Snow -- Littlefinger
+    Jon Snow -- Cersei Lannister
+    Jon Snow -- Jaime Lannister
+    Jon Snow -- Euron Greyjoy
+    Tyrion Lannister ++ Varys
+    Tyrion Lannister ++ Jorah Mormont
+    Tyrion Lannister ++ Beric Dondarrion
+    Tyrion Lannister ++ Sandor “the Hound” Clegane
+    Tyrion Lannister ++ Theon and Yara Greyjoy
+    Tyrion Lannister -- Sansa Stark
+    Tyrion Lannister -- Arya Stark
+    Tyrion Lannister -- Bran Stark
+    Tyrion Lannister -- The Lords of the North and the Vale
+    Tyrion Lannister -- Littlefinger
+    Tyrion Lannister -- Cersei Lannister
+    Tyrion Lannister -- Jaime Lannister
+    Tyrion Lannister -- Euron Greyjoy
+    Varys ++ Jorah Mormont
+    Varys ++ Beric Dondarrion
+    Varys ++ Sandor “the Hound” Clegane
+    Varys ++ Theon and Yara Greyjoy
+    Varys -- Sansa Stark
+    Varys -- Arya Stark
+    Varys -- Bran Stark
+    Varys -- The Lords of the North and the Vale
+    Varys -- Littlefinger
+    Varys -- Cersei Lannister
+    Varys -- Jaime Lannister
+    Varys -- Euron Greyjoy
+    Jorah Mormont ++ Beric Dondarrion
+    Jorah Mormont ++ Sandor “the Hound” Clegane
+    Jorah Mormont ++ Theon and Yara Greyjoy
+    Jorah Mormont -- Sansa Stark
+    Jorah Mormont -- Arya Stark
+    Jorah Mormont -- Bran Stark
+    Jorah Mormont -- The Lords of the North and the Vale
+    Jorah Mormont -- Littlefinger
+    Jorah Mormont -- Cersei Lannister
+    Jorah Mormont -- Jaime Lannister
+    Jorah Mormont -- Euron Greyjoy
+    Beric Dondarrion ++ Sandor “the Hound” Clegane
+    Beric Dondarrion ++ Theon and Yara Greyjoy
+    Beric Dondarrion -- Sansa Stark
+    Beric Dondarrion -- Arya Stark
+    Beric Dondarrion -- Bran Stark
+    Beric Dondarrion -- The Lords of the North and the Vale
+    Beric Dondarrion -- Littlefinger
+    Beric Dondarrion -- Cersei Lannister
+    Beric Dondarrion -- Jaime Lannister
+    Beric Dondarrion -- Euron Greyjoy
+    Sandor “the Hound” Clegane ++ Theon and Yara Greyjoy
+    Sandor “the Hound” Clegane -- Sansa Stark
+    Sandor “the Hound” Clegane -- Arya Stark
+    Sandor “the Hound” Clegane -- Bran Stark
+    Sandor “the Hound” Clegane -- The Lords of the North and the Vale
+    Sandor “the Hound” Clegane -- Littlefinger
+    Sandor “the Hound” Clegane -- Cersei Lannister
+    Sandor “the Hound” Clegane -- Jaime Lannister
+    Sandor “the Hound” Clegane -- Euron Greyjoy
+    Theon and Yara Greyjoy -- Sansa Stark
+    Theon and Yara Greyjoy -- Arya Stark
+    Theon and Yara Greyjoy -- Bran Stark
+    Theon and Yara Greyjoy -- The Lords of the North and the Vale
+    Theon and Yara Greyjoy -- Littlefinger
+    Theon and Yara Greyjoy -- Cersei Lannister
+    Theon and Yara Greyjoy -- Jaime Lannister
+    Theon and Yara Greyjoy -- Euron Greyjoy
+    Sansa Stark ++ Arya Stark
+    Sansa Stark ++ Bran Stark
+    Sansa Stark ++ The Lords of the North and the Vale
+    Sansa Stark ++ Littlefinger
+    Sansa Stark -- Cersei Lannister
+    Sansa Stark -- Jaime Lannister
+    Sansa Stark -- Euron Greyjoy
+    Arya Stark ++ Bran Stark
+    Arya Stark ++ The Lords of the North and the Vale
+    Arya Stark ++ Littlefinger
+    Arya Stark -- Cersei Lannister
+    Arya Stark -- Jaime Lannister
+    Arya Stark -- Euron Greyjoy
+    Bran Stark ++ The Lords of the North and the Vale
+    Bran Stark -- Littlefinger
+    Bran Stark -- Cersei Lannister
+    Bran Stark -- Jaime Lannister
+    Bran Stark -- Euron Greyjoy
+    The Lords of the North and the Vale ++ Littlefinger
+    The Lords of the North and the Vale -- Cersei Lannister
+    The Lords of the North and the Vale -- Jaime Lannister
+    The Lords of the North and the Vale -- Euron Greyjoy
+    Littlefinger -- Cersei Lannister
+    Littlefinger -- Jaime Lannister
+    Littlefinger -- Euron Greyjoy
+    Cersei Lannister ++ Jaime Lannister
+    Cersei Lannister ++ Euron Greyjoy
+    Jaime Lannister ++ Euron Greyjoy
+
+# Notes
+
+You can learn more about the ideas behind this challenge in these resources:
+
+* [Positive and Negative Relationships](https://courses.cit.cornell.edu/info204_2007sp/balance.pdf), in D. Easley and J. Kleinberg. Networks, Crowds, and Markets: Reasoning about a Highly Connected World (2010). 
+* [Network Mathematics and Rival Factions](https://www.youtube.com/watch?v=qEKNFOaGQcc) from the PBS Digital YouTube channel Infinite Series. It was this video that inspired this challenge. 
+* [The Graph of Thrones \[Season 7 Contest\]](https://neo4j.com/blog/graph-of-thrones/), from the Neo4j site referencing how to use their software to answer a Kaggle challenge about predicting GoT's future. 
+"
+[2019-02-13] Challenge #375 [Intermediate] A Card Flipping Game,97,aq6gfy,56,1550092408.0,"
+# Description
+
+This challenge is about [a simple card flipping solitaire
+game](https://www.youtube.com/watch?v=CCxs-tu8tOU). You're presented
+with a sequence of cards, some face up, some face down. You can remove
+any face up card, but you must then flip the adjacent cards (if any).
+The goal is to successfully remove every card. Making the wrong move can
+get you stuck.
+
+In this challenge, a 1 signifies a face up card and a 0 signifies a face
+down card. We will also use zero-based indexing, starting from the left,
+to indicate specific cards. So, to illustrate a game, consider this
+starting card set.
+
+    0100110
+
+I can choose to remove cards 1, 4, or 5 since these are face up. If I
+remove card 1, the game looks like this (using `.` to signify an empty
+spot):
+
+    1.10110
+
+I had to flip cards 0 and 2 since they were adjacent. Next I could
+choose to remove cards 0, 2, 4, or 5. I choose card 0:
+
+    ..10110
+
+Since it has no adjacent cards, there were no cards to flip. I can win
+this game by continuing with: 2, 3, 5, 4, 6.
+
+Supposed instead I started with card 4:
+
+    0101.00
+
+This is unsolvable since there's an ""island"" of zeros, and cards in such
+islands can never be flipped face up.
+
+# Input Description
+
+As input you will be given a sequence of 0 and 1, no spaces.
+
+# Output Description
+
+Your program must print a sequence of moves that leads to a win. If
+there is no solution, it must print ""no solution"". In general, if
+there's one solution then there are many possible solutions.
+
+Optional output format: Illustrate the solution step by step.
+
+# Sample Inputs
+
+    0100110
+    01001100111
+    100001100101000
+
+# Sample Outputs
+
+    1 0 2 3 5 4 6
+    no solution
+    0 1 2 3 4 6 5 7 8 11 10 9 12 13 14
+
+# Challenge Inputs
+
+    0100110
+    001011011101001001000
+    1010010101001011011001011101111
+    1101110110000001010111011100110
+
+# Bonus Input
+
+    010111111111100100101000100110111000101111001001011011000011000
+
+# Credit
+
+This challenge was suggested by /u/skeeto, many thanks! If you have a challenge idea please share it in /r/dailyprogrammer_ideas and there's a good chance we'll use it. "
+[2019-02-11] Challenge #375 [Easy] Print a new number by adding one to each of its digit,167,aphavc,231,1549927550.0,"# Description
+
+A number is input in computer then a new no should get printed by adding one to each of its digit. If you encounter a 9, insert a 10 (don't carry over, just shift things around). 
+
+For example, 998 becomes 10109.
+
+# Bonus
+
+This challenge is trivial to do if you map it to a string to iterate over the input, operate, and then cast it back. Instead, try doing it without casting it as a string at any point, keep it numeric (int, float if you need it) only.
+
+# Credit
+
+This challenge was suggested by user /u/chetvishal, many thanks! If you have a challenge idea please share it in /r/dailyprogrammer_ideas and there's a good chance we'll use it. "
+[2019-02-01] Challenge #374 [Hard] Nonogram Solver,108,am1x6o,35,1549055974.0,"# Description
+
+A Nonogram (picross or griddlers) is a puzzle where you are given a grid with numbers indicating how many cells should be colored in that row/column. [example.](https://en.wikipedia.org/wiki/Nonogram) The more complex the grid is, the longer it can take to solve the puzzle.
+
+# Formal Inputs and Outputs
+
+## Inputs
+
+	num columns
+	num rows
+	columns
+	rows
+
+## Output
+
+Draw the solved nonogram.
+
+## Example Input
+
+	5
+	5
+	""5"",""2,2"",""1,1"",""2,2"",""5""
+	""5"",""2,2"",""1,1"",""2,2"",""5""
+
+
+## Example Output
+
+    *****
+    ** **
+    *   *
+    ** **
+    *****
+
+
+# Bonus Challenge
+
+Include color in your input (note: colors don't necessarily have a space between the numbers)
+
+# Credit
+
+This challenge was suggested by /u/bmac951, many thanks! Have a good challenge idea? Consider submitting it to /r/dailyprogrammer_ideas and there's a good chance we'll use it."
+[2019-01-30] Challenge #374 [Intermediate] The Game of Blobs,66,aldexk,34,1548888827.0,"# Description
+
+You are give a list of blobs, each having an initial position in an discrete grid, and a size. Blobs try to eat each other greedily and move around accordingly. 
+
+During each cycle, all blobs move one step (Moore neighborhood) towards another blob of smaller size (if any). This blob is chosen as the closest one, with a preference for larger ones, breaking ties as clockwise (11H < 12H > 01H). 
+
+At the end of each cycle, blobs merge (with summed size) if they are on the same location.
+
+Return the final state of the blobs.
+
+# Example:
+
+Given: `[(0,2,1),(2,1,2)]` as a list of (x,y and size)
+
+    ..1    ..1    ..3
+    ...    ..2    ...
+    .2.    ...    ...
+
+Solution: `[(0,2)]`
+
+# Challenge 
+
+    [(0,1,2),
+     (10,0,2)]
+
+    [(4, 3, 4), 
+     (4, 6, 2), 
+     (8, 3, 2), 
+     (2, 1, 3)]
+
+    [(-57, -16, 10),
+     (-171, -158, 13),
+     (-84, 245, 15),
+     (-128, -61, 16),
+     (65, 196, 4),
+     (-221, 121, 8),
+     (145, 157, 3),
+     (-27, -75, 5)]
+
+# Bonus
+
+Help the blobs break out of flatland. 
+
+Given: `[(1,2),(4,2)]`
+
+    .1..2    .1.2.    .12..    .3...
+
+A solution: `[(1,3)]`
+
+Given `[(0,2,0,1),(1,2,1,2)]`
+
+    ..1    .21    ..3
+    ...    ...    ...
+    /      /      /
+    ...    ...    ...
+    2..    ...    ...
+
+A solution `[(0,2,0)]`
+
+# Bonus 2
+
+Mind that the distances can be long. Try to limit run times.
+
+# Bonus Challenges
+
+    [(6,3), 
+     (-7,4), 
+     (8,3), 
+     (7,1)]
+
+    [(-7,-16,-16,4),
+     (14,11,12,1),
+     (7,-13,-13,4),
+     (-9,-8,-11,3)]
+
+.
+
+    [(-289429971, 243255720, 2),
+     (2368968216, -4279093341, 3),
+     (-2257551910, -3522058348, 2),
+     (2873561846, -1004639306, 3)]
+	 
+# Credits
+
+This challenge was suggested by /user/tomekanco, many thanks! Have a good challenge idea? Consider submitting it to /r/dailyprogrammer_ideas and there's a good chance we'll use it. "
+[2019-01-28] Challenge #374 [Easy] Additive Persistence,138,akv6z4,191,1548757014.0,"# Description
+
+Inspired by [this tweet](https://twitter.com/fermatslibrary/status/1089883307473543170), today's challenge is to calculate the [_additive persistence_](http://mathworld.wolfram.com/AdditivePersistence.html) of a number, defined as how many loops you have to do summing its digits until you get a single digit number. Take an integer _N_:
+
+1. Add its digits
+1. Repeat until the result has 1 digit
+
+The total number of iterations is the additive persistence of N. 
+
+Your challenge today is to implement a function that calculates the additive persistence of a number. 
+
+# Examples
+
+    13 -> 1
+    1234 -> 2
+    9876 -> 2
+    199 -> 3
+
+# Bonus
+
+The really easy solution manipulates the input to convert the number to a string and iterate over it. Try it without making the number a strong, decomposing it into digits while keeping it a number. 
+
+On some platforms and languages, if you try and find ever larger persistence values you'll quickly learn about your platform's big integer interfaces (e.g. 64 bit numbers). 
+"
+[2019-01-25] Challenge #373 [Hard] Embeddable trees,81,ajunxe,32,1548484934.0,"Today's challenge requires an understanding of trees in the sense of graph theory. If you're not familiar with the concept, [read up on Wikipedia](https://en.wikipedia.org/wiki/Tree_%28graph_theory%29) or some other resource before diving in.
+
+Today we're dealing with *unlabeled, rooted trees*. We'll need to be able to represent fairly large trees. I'll use a representation I just made up (but you can use anything you want that's understandable):
+
+* A leaf node is represented by the string `""()""`.
+* A non-leaf node is represented by `""(""`, followed by the representations of its children concatenated together, followed by `"")""`.
+* A tree's representation is the same as that of its root node.
+
+For instance, if a node has two children, one with representation `()`, and one with representation `(()())`, then that node's representation is `( + () + (()()) + ) = (()(()()))`. [This image illustrates the following example trees:](https://i.imgur.com/2lkQS07.jpg)
+
+* `((()))`
+* `(()())`
+* `((())(()))`
+* `((((()()))(()))((((()()))))((())(())(())))`
+
+In this image, I've colored some of the nodes so you can more easily see which parentheses correspond to which nodes, but the colors are not significant: the nodes are actually unlabeled.
+
+## Warmup 1: equal trees
+
+The ordering of child nodes is unimportant. Two trees are equal if you can rearrange the children of each one to produce the same representation. [This image shows the following pairs of equal trees](https://i.imgur.com/dpS44kV.jpg):
+
+* `((())()) = (()(()))`
+* `((()((())()))(())) = ((())(()(()(()))))`
+
+Given representations of two trees, determine whether the two trees are equal.
+
+    equal(""((()((())()))(()))"", ""((())(()(()(()))))"") => true
+    equal(""((()))"", ""(()())"") => false
+    equal(""(((()())())()())"", ""(((()())()())())"") => false
+
+It's easy to make a mistake, so I highly recommend checking yourself before submitting your answer! [Here's a list of 200 randomly-generated pairs of trees](https://gist.githubusercontent.com/cosmologicon/be38523b48f7da5ab9c886fca94a57b4/raw/37abb03b7365ff17056f7f59beb77d999fd6c81b/tree-equal.txt), one pair on each line, separated by a space. For how many pairs is the first tree equal to the second?
+
+## Warmup 2: embeddable trees
+
+One tree is *homeomorphically embeddable* into another - which we write as `<=` - if it's possible to label the trees' nodes such that:
+
+* Every label is unique within each tree.
+* Every label in the first tree appears in the second tree.
+* If two nodes appear in the first tree with labels X and Y, and their [lowest common ancestor](https://en.wikipedia.org/wiki/Lowest_common_ancestor) is labeled Z in the first tree, then nodes X and Y in the second tree must also have Z as their lowest common ancestor.
+
+[This image shows a few examples](https://i.imgur.com/YmNC3cR.jpg):
+
+* `(()) <= (()())`
+* `(()()) <= (((())()))`
+* `(()()())` is not embeddable in `((()())())`. The image shows one incorrect attempt to label them: in the first graph, B and C have a lowest common ancestor of A, but in the second graph, B and C's lowest common ancestor is the unlabeled node.
+* `(()(()())) <= (((((())()))())((()())))`. There are several different valid labelings in this case. The image shows one.
+
+Given representations of two trees, determine whether the first is embeddable in the second.
+
+    embeddable(""(())"", ""(()())"") => true
+    embeddable(""(()()())"", ""((()())())"") => false
+
+It's easy to make a mistake, so I highly recommend checking yourself before submitting your answer! [Here's a list of 200 randomly-generated pairs of trees](https://gist.githubusercontent.com/cosmologicon/dcf49d29c563dfc36a3d1c5053124be4/raw/9c663c5a9071571f041d11b08bf3c8958a22b3dd/tree-embed.txt), one pair on each line, separated by a space. For how many pairs is the first embeddable into the second?
+
+## Challenge: embeddable tree list
+
+Generate a list of trees as long as possible such that:
+
+1. The first tree has no more than 4 nodes, the second has no more than 5, the third has no more than 6, etc.
+2. No tree in the list is embeddable into a tree that appears later in the list. That is, there is no pair of indices i and j such that i < j and the i'th tree <= the j'th tree."
+[2019-01-14] Challenge #372 [Easy] Perfectly balanced,199,afxxca,442,1547514849.0,"Given a string containing only the characters `x` and `y`, find whether there are the same number of `x`s and `y`s.
+
+    balanced(""xxxyyy"") => true
+    balanced(""yyyxxx"") => true
+    balanced(""xxxyyyy"") => false
+    balanced(""yyxyxxyxxyyyyxxxyxyx"") => true
+    balanced(""xyxxxxyyyxyxxyxxyy"") => false
+    balanced("""") => true
+    balanced(""x"") => false
+
+## Optional bonus
+
+Given a string containing only lowercase letters, find whether every letter that appears in the string appears the same number of times. Don't forget to handle the empty string (`""""`) correctly!
+
+    balanced_bonus(""xxxyyyzzz"") => true
+    balanced_bonus(""abccbaabccba"") => true
+    balanced_bonus(""xxxyyyzzzz"") => false
+    balanced_bonus(""abcdefghijklmnopqrstuvwxyz"") => true
+    balanced_bonus(""pqq"") => false
+    balanced_bonus(""fdedfdeffeddefeeeefddf"") => false
+    balanced_bonus(""www"") => true
+    balanced_bonus(""x"") => true
+    balanced_bonus("""") => true
+
+Note that `balanced_bonus` behaves differently than `balanced` for a few inputs, e.g. `""x""`."
+[2018-12-31] Challenge #371 [Easy] N queens validator,100,ab9mn7,102,1546308885.0,"For the purpose of this challenge, the N queens problem consists of putting one queen on every column (labeled a, b, c, ...) of an NxN chessboard, such that no two queens are in the same row or diagonal. An example valid solution for N = 6 is:
+
+    6  . . Q . . .
+    5  . . . . . Q
+    4  . Q . . . .
+    3  . . . . Q .
+    2  Q . . . . .
+    1  . . . Q . .
+       a b c d e f
+
+In chess notation, the squares with queens in this solution are called `a2`, `b4`, `c6`, `d1`, `e3`, and `f5`. We'll represent solutions by listing the rows that each column's queen appears in from left to right, so this solution is represented as the array `{2, 4, 6, 1, 3, 5}`.
+
+Solving the N queens problem was [#25 (difficult)](https://www.reddit.com/r/dailyprogrammer/comments/qxv8h/3152012_challenge_25_difficult/) on r/dailyprogrammer, but you don't need to actually solve it for today's challenge.
+
+# Challenge
+
+Given an array of 8 integers between 1 and 8, determine whether it represents a valid 8 queens solution.
+
+    qcheck({4, 2, 7, 3, 6, 8, 5, 1}) => true
+    qcheck({2, 5, 7, 4, 1, 8, 6, 3}) => true
+    qcheck({5, 3, 1, 4, 2, 8, 6, 3}) => false   (b3 and h3 are on the same row)
+    qcheck({5, 8, 2, 4, 7, 1, 3, 6}) => false   (b8 and g3 are on the same diagonal)
+    qcheck({4, 3, 1, 8, 1, 3, 5, 2}) => false   (multiple problems)
+
+You may optionally handle solutions for any N, not just N = 8.
+
+# Optional bonus
+
+In this bonus, you are given an invalid solution where it's possible to swap two numbers and produce a valid solution, which you must find. (Be aware that most invalid solutions will not have this property.)
+
+For example, `{8, 6, 4, 2, 7, 1, 3, 5}` is invalid because `c4` and `f1` are on the same diagonal. But if you swap the 8 and the 4 (i.e. replace `a8` and `c4` with `a4` and `c8`), you get the valid solution `{4, 6, 8, 2, 7, 1, 3, 5}`.
+
+    qfix({8, 6, 4, 2, 7, 1, 3, 5}) => {4, 6, 8, 2, 7, 1, 3, 5}
+    qfix({8, 5, 1, 3, 6, 2, 7, 4}) => {8, 4, 1, 3, 6, 2, 7, 5}
+    qfix({4, 6, 8, 3, 1, 2, 5, 7}) => {4, 6, 8, 3, 1, 7, 5, 2}
+    qfix({7, 1, 3, 6, 8, 5, 2, 4}) => {7, 3, 1, 6, 8, 5, 2, 4}"
+[2018-12-17] Challenge #370 [Easy] UPC check digits,146,a72sdj,232,1545102426.0,"The Universal Product Code (UPC-A) is a bar code used in many parts of the world. The bars encode a 12-digit number used to identify a product for sale, for example:
+
+    042100005264
+
+The 12th digit (4 in this case) is a redundant check digit, used to catch errors. Using some simple calculations, a scanner can determine, given the first 11 digits, what the check digit must be for a valid code. (Check digits have previously appeared in this subreddit: see [Intermediate 30](https://www.reddit.com/r/dailyprogrammer/comments/red6f/3262012_challenge_30_intermediate/) and [Easy 197](https://www.reddit.com/r/dailyprogrammer/comments/2s7ezp/20150112_challenge_197_easy_isbn_validator/).) UPC's check digit is calculated as follows (taken from Wikipedia):
+
+1. Sum the digits at odd-numbered positions (1st, 3rd, 5th, ..., 11th). *If you use 0-based indexing, this is the even-numbered positions (0th, 2nd, 4th, ... 10th).*
+2. Multiply the result from step 1 by 3.
+3. Take the sum of digits at even-numbered positions (2nd, 4th, 6th, ..., 10th) in the original number, and add this sum to the result from step 2.
+4. Find the result from step 3 modulo 10 (i.e. the remainder, when divided by 10) and call it *M*.
+5. If *M* is 0, then the check digit is 0; otherwise the check digit is 10 - *M*.
+
+For example, given the first 11 digits of a UPC `03600029145`, you can compute the check digit like this:
+
+1. Sum the odd-numbered digits (0 + 6 + 0 + 2 + 1 + 5 = 14).
+2. Multiply the result by 3 (14 × 3 = 42).
+3. Add the even-numbered digits (42 + (3 + 0 + 0 + 9 + 4) = 58).
+4. Find the result modulo 10 (58 divided by 10 is 5 remainder 8, so *M* = 8).
+5. If *M* is not 0, subtract *M* from 10 to get the check digit (10 - *M* = 10 - 8 = 2).
+
+So the check digit is `2`, and the complete UPC is `036000291452`.
+
+# Challenge
+
+Given an 11-digit number, find the 12th digit that would make a valid UPC. You may treat the input as a string if you prefer, whatever is more convenient. If you treat it as a number, you may need to consider the case of leading 0's to get up to 11 digits. That is, an input of `12345` would correspond to a UPC start of `00000012345`.
+
+# Examples
+
+    upc(4210000526) => 4
+    upc(3600029145) => 2
+    upc(12345678910) => 4
+    upc(1234567) => 0
+
+Also, if you live in a country that uses UPCs, you can generate all the examples you want by picking up store-bought items or packages around your house. Find anything with a bar code on it: if it has 12 digits, it's probably a UPC. Enter the first 11 digits into your program and see if you get the 12th."
+[2018-11-26] Challenge #369 [Easy] Hex colors,168,a0lhxx,319,1543282755.0,"# Background
+
+One common way for software specifications such as HTML to specify colors is with a hexadecimal string. For instance the color aquamarine is represented by the string `""#7FFFD4""`. Here's how the string breaks down:
+
+* The first character is always `""#""`.
+* The second and third character are the red channel value, represented as a hexadecimal value between `00` and `FF`. In this example, the red channel value is 127, which in hexadecimal is `7F`.
+* The fourth and fifth character are the green channel value, represented the same way. In this example, the green channel value is 255, which in hexadecimal is `FF`.
+* The sixth and seventh character are the blue channel value, represented the same way. In this example, the blue channel value is 212, which in hexadecimal is `D4`.
+
+All three channel values must be an integer between 0 (minimum brightness) and 255 (maximum brightness). In all cases the hex values are two digits each, including a leading `0` if necessary. [See the Wikipedia page for more examples, and a link for how to convert a number to hexadecimal](https://en.wikipedia.org/wiki/Web_colors#Converting_RGB_to_hexadecimal).
+
+# Challenge
+
+Given three integers between 0 and 255, corresponding to the red, green, and blue channel values of a color, find the hex string for that color. You may use anything built into your programming language, such as for base conversion, but you can also do it manually.
+
+# Examples
+
+    hexcolor(255, 99, 71) => ""#FF6347""  (Tomato)
+    hexcolor(184, 134, 11) => ""#B8860B""  (DarkGoldenrod)
+    hexcolor(189, 183, 107) => ""#BDB76B""  (DarkKhaki)
+    hexcolor(0, 0, 205) => ""#0000CD""  (MediumBlue)
+
+# Optional bonus: color blending
+
+Given a list of hex color strings, produce the hex color string you get from averaging their RGB values together. You'll need to round channel values to integers.
+
+    blend({""#000000"", ""#778899""}) => ""#3C444C""
+    blend({""#E6E6FA"", ""#FF69B4"", ""#B0C4DE""}) => ""#DCB1D9""
+
+(This is not actually the best way to blend two hex colors: to do it properly you need gamma correction. But we'll leave that for another time!)"
+[2018-11-21] Challenge #368 [Intermediate] Single-symbol squares,86,9z3mjk,52,1542839006.0,"# Description
+
+Given a grid size N, find an NxN layout of X's and O's such that no axis-aligned square (2x2 or larger) within the grid has the same symbol at each of its four corners. That is, if four cells of the grid form a square, they must not be either all X's or all O's.
+
+For instance, given N = 5, the following would **not** be a valid output:
+
+    O O O X X
+    X X O O O
+    X O X O X
+    O X O O X
+    X O X X O
+
+because there's a 3x3 square whose four corners are all X's:
+
+    . . . . .
+    . . . . .
+    X . X . .
+    . . . . .
+    X . X . .
+
+# Example input
+
+    5
+
+# Example output
+
+    O O O X X
+    X X O O O
+    O O X O X
+    O X O O X
+    X O X X O
+
+# Run time
+
+To qualify as a solution to this challenge, you must actually run your program through to completion for N = 6. It's not enough to write a program that will eventually complete. Post your solution along with your code.
+
+(If you find this too hard, try to at least complete N = 4.)
+
+# Optional Bonus 1
+
+Find a solution for N = 10.
+
+# Optional Bonus 2
+
+(Let's consider this to be this week's Hard problem.)
+
+For N = 32, generate an output with as few single-symbol squares as possible. (I have no idea what's a good score here, or if 0 is even possible.)
+
+Here's some Python that will tell you the number of single-symbol squares for a grid formatted like the example:
+
+    import sys
+    grid = [line.strip().split() for line in sys.stdin if line.strip()]
+    N = len(grid)
+    assert all(len(line) == N for line in grid)
+    # For the square with upper-left corner (x, y) with side length d+1,
+    # are the four corners of the square the same?
+    def square_is_single(x, y, d):
+        corners = [grid[x+a][y+b] for a in (0, d) for b in (0, d)]
+        return len(set(corners)) == 1
+    def squares():
+        for x in range(N):
+            for y in range(N):
+                for d in range(1, N):
+                    if x + d < N and y + d < N:
+                        yield x, y, d
+    print(sum(square_is_single(x, y, d) for x, y, d in squares()))"
+[2018-09-07] Challenge #367 [Hard] The Mondrian Puzzle,73,9dv08q,21,1536360250.0,"# Description
+
+The artist Piet Mondrian is a famous mid-century abstract artist. His designs of brightly colored rectangles on a canvas should be familiar to you even if you don't know his name. He's even given his name to a visual programming language _Piet_.
+
+I learned about this puzzle from [this video from TED-Ed](https://www.youtube.com/watch?v=AWcY2-FBa9k) on the challenge. Briefly:
+
+_""Fit non-congruent rectangles into a `n*n` square grid. What is the smallest difference possible between the areas of the largest and the smallest rectangles?""_
+
+Remember a non-congruent rectangle is a shape with distinct measurements, so a 8x1 rectangle is the same as a 1x8, but distinct from a 2x4. 
+
+Your challenge today is to write a program that can heuristically subdivide the canvas and find a minimal area range. 
+
+This is [sequence A276523](http://oeis.org/A276523) in the OEIS database. 
+
+# Input Description
+
+You'll be given an integer _n_, one per line. This is the size of your canvas to work with. Example:
+
+    11
+
+# Output Description
+
+Your program should emit the smallest value you can find for that canvas size, optionally the dimensions of the rectangles your program generated. Example:
+
+    6
+    3 X 4
+    2 X 6
+    2 X 7
+    3 X 5
+    4 X 4
+    2 X 8
+    2 X 9
+    3 X 6
+
+# Challenge Input
+
+
+    4
+    8
+    10
+    20
+    25
+    32
+
+# Bonus Input
+
+Note that solutions above n=44 don't yet have a known or proven lower bound. 
+
+    50"
+[2018-09-04] Challenge #367 [Easy] Subfactorials - Another Twist on Factorials,101,9cvo0f,175,1536096984.0,"# Description
+
+Most everyone who programs is familiar with the factorial - _n!_ - of a number, the product of the series from _n_ to _1_. One interesting aspect of the factorial operation is that it's also the number of permutations of a set of _n_ objects. 
+
+Today we'll look at the _subfactorial_, defined as the [*derangement*](https://en.wikipedia.org/wiki/Derangement) of a set of _n_ objects, or a permutation of the elements of a set, such that no element appears in its original position. We denote it as _!n_. 
+
+Some basic definitions:
+
+- !1 -> 0 because you always have {1}, meaning 1 is always in it's position.
+- !2 -> 1 because you have {2,1}.
+- !3 -> 2 because you have {2,3,1} and {3,1,2}. 
+
+And so forth. 
+
+Today's challenge is to write a subfactorial program. Given an input _n_, can your program calculate the correct value for _n_?
+
+# Input Description
+
+You'll be given inputs as one integer per line. Example:
+
+    5
+
+# Output Description
+
+Your program should yield the subfactorial result. From our example:
+
+    44
+
+(EDIT earlier I had 9 in there, but that's incorrect, that's for an input of 4.)
+
+# Challenge Input
+
+    6
+    9
+    14
+
+# Challenge Output
+
+    !6 -> 265
+    !9 -> 133496
+    !14 -> 32071101049
+
+# Bonus
+
+Try and do this as code golf - the shortest code you can come up with.
+
+# Double Bonus
+
+Enterprise edition - the most heavy, format, ceremonial code you can come up with in the enterprise style.
+
+# Notes
+
+This was inspired after watching the Mind Your Decisions video about the ""3 3 3 10"" puzzle, where a subfactorial was used in one of the solutions. "
+[2018-08-24] Challenge #366 [Hard] Incomplete word ladders,66,99yl83,29,1535154879.0,"# Definitions
+
+Given two different strings of equal length, the *spacing* between them is the number of other strings you would need to connect them on a [word ladder](https://en.wikipedia.org/wiki/Word_ladder). Alternately, this is 1 less than the number of letters that differ between the two strings. Examples:
+
+    spacing(""shift"", ""shirt"") => 0
+    spacing(""shift"", ""whist"") => 1
+    spacing(""shift"", ""wrist"") => 2
+    spacing(""shift"", ""taffy"") => 3
+    spacing(""shift"", ""hints"") => 4
+
+The *total spacing* of a word list is the sum of the spacing between each consecutive pair of words on the word list, i.e. the number of (not necessarily distinct) strings you'd need to insert to make it into a word ladder. For example, the list:
+
+    daily
+    doily
+    golly
+    guilt
+
+has a total spacing of 0 + 1 + 2 = 3
+
+# Challenge
+
+Given an input list of unique words and a maximum total spacing, output a list of distinct words taken from the input list. The output list's total spacing must not exceed the given maximum. The output list should be as long as possible.
+
+You are allowed to use existing libraries and research in forming your solution. (I'm guessing there's some graph theory algorithm that solves this instantly, but I don't know it.)
+
+# Example input
+
+    abuzz
+    carts
+    curbs
+    degas
+    fruit
+    ghost
+    jupes
+    sooth
+    weirs
+    zebra
+
+Maximum total spacing: 10
+
+# Example output
+
+The longest possible output given this input has length of 6:
+
+    zebra
+    weirs
+    degas
+    jupes
+    curbs
+    carts
+
+# Challenge input
+
+[This list of 1000 4-letter words randomly chosen from enable1](https://gist.githubusercontent.com/cosmologicon/0a4448e8fdb79ee620a68ed131eac58e/raw/a8831d08019f73e7d5a52042e2c4afe6fea70011/363-hard-words.txt).
+
+Maximum total spacing of 100.
+
+My best solution has a length of 602. How much higher can you get?"
+[2018-08-22] Challenge #366 [Intermediate] Word funnel 2,98,99d24u,65,1534971094.0,"# Challenge
+
+A *word funnel* is a series of words formed by removing one letter at a time from a starting word, keeping the remaining letters in order. For the purpose of this challenge, a word is defined as an entry in [the enable1 word list](https://raw.githubusercontent.com/dolph/dictionary/master/enable1.txt). An example of a word funnel is:
+
+    gnash => gash => ash => ah
+
+This word funnel has length 4, because there are 4 words in it.
+
+Given a word, determine the length of the longest word funnel that it starts. You may optionally also return the funnel itself (or any funnel tied for the longest, in the case of a tie).
+
+# Examples
+
+    funnel2(""gnash"") => 4
+    funnel2(""princesses"") => 9
+    funnel2(""turntables"") => 5
+    funnel2(""implosive"") => 1
+    funnel2(""programmer"") => 2
+
+# Optional bonus 1
+
+Find the one word in the word list that starts a funnel of length 10.
+
+# Optional bonus 2
+
+For this bonus, you are allowed to remove more than one letter in a single step of the word funnel. For instance, you may step from `sideboard` to `sidebar` by removing the `o` and the final `d` in a single step. With this modified rule, it's possible to get a funnel of length 12:
+
+    preformationists =>
+    preformationist =>
+    preformations =>
+    reformations =>
+    reformation =>
+    formation =>
+    oration =>
+    ration =>
+    ratio =>
+    rato =>
+    rat =>
+    at
+
+`preformationists` is one of six words that begin a modified funnel of length 12. Find the other five words.
+
+# Acknowledgement
+
+*Thanks to u/duetosymmetry for posting today's challenge on r/dailyprogrammer_ideas!*"
+[2018-08-20] Challenge #366 [Easy] Word funnel 1,123,98ufvz,277,1534806854.0,"# Challenge
+
+Given two strings of letters, determine whether the second can be made from the first by removing one letter. The remaining letters must stay in the same order.
+
+# Examples
+
+    funnel(""leave"", ""eave"") => true
+    funnel(""reset"", ""rest"") => true
+    funnel(""dragoon"", ""dragon"") => true
+    funnel(""eave"", ""leave"") => false
+    funnel(""sleet"", ""lets"") => false
+    funnel(""skiff"", ""ski"") => false
+
+# Optional bonus 1
+
+Given a string, find all words from [the enable1 word list](https://raw.githubusercontent.com/dolph/dictionary/master/enable1.txt) that can be made by removing one letter from the string. If there are two possible letters you can remove to make the same word, only count it once. Ordering of the output words doesn't matter.
+
+    bonus(""dragoon"") => [""dragon""]
+    bonus(""boats"") => [""oats"", ""bats"", ""bots"", ""boas"", ""boat""]
+    bonus(""affidavit"") => []
+
+# Optional bonus 2
+
+Given an input word from enable1, the largest number of words that can be returned from `bonus(word)` is 5. One such input is `""boats""`. There are 28 such inputs in total. Find them all.
+
+Ideally you can do this without comparing every word in the list to every other word in the list. A good time is around a second. Possibly more or less, depending on your language and platform of choice - Python will be slower and C will be faster. The point is not to hit any specific run time, just to be much faster than checking every pair of words.
+
+# Acknowledgement
+
+*Thanks to u/duetosymmetry for inspiring this week's challenges in r/dailyprogrammer_ideas!*"
+[2018-07-13] Challenge #365 [Hard] Tessellations and Tilings,98,8ylltu,22,1531529374.0,"# Description
+
+A *Tessellation* (or Tiling) is the act of covering a surface with a pattern of flat shapes so that there are no overlaps or gaps. Tessellations express fascinating geometric and symmetric properties as art, and famously appear in Islamic art with four, five, and six-fold regular tessellations.
+
+Today we'll your challenge is to write a program that can do basic regular tessellations in ASCII art. 
+
+# Input Description
+
+You'll be given an integer on the first line, which can be positive or negative. It tells you the rotation (relative to clockwise, so 180, 90, 0, or -90) to spin the tile as you tessellate it. The next line contains a single integer that tells your program how many columns and rows to read (assume it's a square). Then the next _N_ rows contain the pattern of the tile in ASCII art. 
+
+Example:
+
+    90
+    4
+    ####
+    #--#
+    #++#
+    ####
+
+# Output Description
+
+Your program should emit a tessellation of the tile, with the rotation rules applied, repeated _at least two times in both the horizontal and vertical directions_, you can do more if you wish. For the above:
+
+    ########
+    #--##+|#
+    #++##+|#
+    ########
+    ########
+    #+|##++#
+    #+|##--#
+    ########
+
+# Challenge Input
+
+
+    90
+    6
+    /\-/|-
+    /\/-\/
+    ||\\-\
+    |\|-|/
+    |-\|/|
+    |\-/-\
+
+----
+
+    180
+    6
+    &`{!#;
+    #*#@+#
+    ~/}}?|
+    '|(==]
+    \^)~=*
+    |?|*<%
+
+# Bonus
+
+Feel free to come up with some fun designs you can feed your program.
+
+Feel free, also, to do this not with ASCII art but ANSI or even graphics. "
+[2018-07-11] Challenge #365 [Intermediate] Sales Commissions,96,8xzwl6,77,1531347075.0,"# Description
+
+You're a regional manager for an office beverage sales company, and right now you're in charge of paying your sales team they're monthly commissions. 
+
+Sales people get paid using the following formula for the total commission: commission is 6.2% of profit, with no commission for any product to total less than zero. 
+
+# Input Description
+
+You'll be given two matrices showing the sales figure per salesperson for each product they sold, and the expenses by product per salesperson. Example:
+
+    Revenue 
+
+            Frank   Jane
+    Tea       120    145
+    Coffee    243    265
+
+    Expenses
+
+            Frank   Jane
+    Tea       130     59
+    Coffee    143    198
+
+# Output Description
+
+Your program should calculate the commission for each salesperson for the month. Example:
+
+
+                    Frank   Jane
+    Commission       6.20   9.49
+
+# Challenge Input
+
+    Revenue
+
+                Johnver Vanston Danbree Vansey  Mundyke
+    Tea             190     140    1926     14      143
+    Coffee          325      19     293   1491      162
+    Water           682      14     852     56      659
+    Milk            829     140     609    120       87
+
+    Expenses
+
+                Johnver Vanston Danbree Vansey  Mundyke
+    Tea             120      65     890     54      430
+    Coffee          300      10      23    802      235
+    Water            50     299    1290     12      145
+    Milk             67     254      89    129       76
+
+# Challenge Output
+
+                Johnver Vanston Danbree Vansey  Mundyke
+    Commission       92       5     113     45       32
+
+# Credit
+
+I grabbed this challenge from Figure 3 of an APL\3000 overview in a [1977 issue of HP Journal](http://www.hpl.hp.com/hpjournal/pdfs/IssuePDFs/1977-07.pdf). If you have an interest in either computer history or the APL family of languages (Dyalog APL, J, etc) this might be interesting to you. "
+[2018-07-09] Challenge #365 [Easy] Up-arrow Notation,99,8xbxi9,62,1531174139.0,"# Description
+
+We were all taught addition, multiplication, and exponentiation in our early years of math.  You can view addition as repeated succession.  Similarly, you can view multiplication as repeated addition.  And finally, you can view exponentiation as repeated multiplication.  But why stop there?  [Knuth's up-arrow notation](https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation) takes this idea a step further.  The notation is used to represent repeated operations.
+
+In this notation a single `↑` operator corresponds to iterated multiplication.  For example:
+
+    2 ↑ 4 = ?
+    = 2 * (2 * (2 * 2)) 
+    = 2^4
+    = 16
+
+While two `↑` operators correspond to iterated exponentiation.  For example:
+
+    2 ↑↑ 4 = ?
+    = 2 ↑ (2 ↑ (2 ↑ 2))
+    = 2^2^2^2
+    = 65536
+
+Consider how you would evaluate three `↑` operators.  For example:
+
+    2 ↑↑↑ 3 = ?
+    = 2 ↑↑ (2 ↑↑ 2)
+    = 2 ↑↑ (2 ↑ 2)
+    = 2 ↑↑ (2 ^ 2)
+    = 2 ↑↑ 4
+    = 2 ↑ (2 ↑ (2 ↑ 2))
+    = 2 ^ 2 ^ 2 ^ 2
+    = 65536
+
+In today's challenge, we are given an expression in Kuth's up-arrow notation to evalute.
+
+    5 ↑↑↑↑ 5
+    7 ↑↑↑↑↑ 3
+    -1 ↑↑↑ 3
+    1 ↑ 0
+    1 ↑↑ 0
+    12 ↑↑↑↑↑↑↑↑↑↑↑ 25
+ 
+# Credit
+
+This challenge was suggested by user /u/wizao, many thanks! If you have a challeng idea please share it in /r/dailyprogrammer_ideas and there's a good chance we'll use it.
+ 
+# Extra Info
+
+This YouTube video, [The Balloon Puzzle - The REAL Answer Explained (""Only Geniuses Can Solve"")](https://www.youtube.com/watch?v=DNmWtINlkhw), includes exponentiation, tetration, and up-arrow notation. Kind of fun, can you solve it? "
+[2018-06-22] Challenge #364 [Hard] Tiling with Pentominos,59,8t4440,26,1529724661.0,"# Description
+
+Have you ever seen one of those puzzles where you have to try and fit a collection of various shapes into a certain area?
+
+The [Pentomino](https://en.wikipedia.org/wiki/Pentomino) was first devised by American professor Solomon Golomb in 1953. A Pentomino is a single polygon made up of 5 congruent squares. A full set of Pentominos consists of all 12 of the possible combinations of the 5 squares (excluding reflections and rotations).
+
+Pentominos have the special property of being able to be packed into many different shapes. For example, with a full set of 12 Pentominos, you could create a rectangle of size 6x10, 5x12, 4x15, and 3x20. Other smaller shapes can be made, but with less Pentominos. Additionally, you can also fill an 8x8 square with 4 holes in it ([although certain positions of the holes can make it impossible](https://en.wikipedia.org/wiki/Pentomino#/media/File:Pentomino_unsolvable.svg)).
+
+The challenge is to output one solution for the given rectangle. 
+
+# Challenge Input
+
+The input is a single line with two numbers. The first number is the width of the rectangle, and the second number is the height.
+
+    10 6
+    12 5
+    15 4
+    20 3
+    5 5
+    7 5
+    5 4
+    10 5
+
+# Challenge Output
+
+The output should be a representation of the board. This can be anything from an ASCII representation to a graphical view. If you go for the ASCII representation, [choose one of the nomenclatures here](https://en.wikipedia.org/wiki/File:Pentomino_Naming_Conventions.svg). For example, the ASCII representation could look like this:
+
+Input:
+
+    10 6
+
+Output:
+    
+    𝙸𝙿𝙿𝚈𝚈𝚈𝚈𝚅𝚅𝚅
+    𝙸𝙿𝙿𝚇𝚈𝙻𝙻𝙻𝙻𝚅
+    𝙸𝙿𝚇𝚇𝚇𝙵𝚉𝚉𝙻𝚅
+    𝙸𝚃𝚆𝚇𝙵𝙵𝙵𝚉𝚄𝚄
+    𝙸𝚃𝚆𝚆𝙽𝙽𝙵𝚉𝚉𝚄
+    𝚃𝚃𝚃𝚆𝚆𝙽𝙽𝙽𝚄𝚄
+
+# Bonus Challenge
+
+Given the positions of 4 holes, give a solution for an 8x8 square. Output ""No Solution"" if it is not possible
+
+# Bonus Input
+
+The bonus input is given by one line containing the size of the square (always 8x8), and then 4 lines each with the coordinate of one hole. The first number is the x position of the hole, the second number is the y position of the hole. Treat 0, 0 as the top-left corner.
+    
+    8 8  
+    3,3  
+    4,3  
+    3,4  
+    4,4
+    
+    8 8  
+    0,7  
+    1,3  
+    2,4  
+    3,5  
+    
+    8 8  
+    1,0  
+    3,0  
+    0,3  
+    1,2  
+
+# Tips
+
+[Here is an online solver that might help you visualize this problem](http://math.hws.edu/eck/js/pentominos/pentominos.html)
+
+Look into [Backtracking](https://en.wikipedia.org/wiki/Backtracking)
+
+# Credit
+
+This challenge was suggested by user /u/DXPower, many thanks! If you have a challeng idea please share it in /r/dailyprogrammer_ideas and there's a good chance we'll use it. "
+[2018-06-20] Challenge #364 [Intermediate] The Ducci Sequence,88,8sjcl0,148,1529538350.0,"# Description
+
+A Ducci sequence is a sequence of n-tuples of integers, sometimes known as ""the Diffy game"", because it is based on sequences. Given an n-tuple of integers (a_1, a_2, ... a_n) the next n-tuple in the sequence is formed by taking the absolute differences of neighboring integers. Ducci sequences are named after Enrico Ducci (1864-1940), the Italian mathematician credited with their discovery.
+
+*Some* Ducci sequences descend to all zeroes or a repeating sequence. An example is (1,2,1,2,1,0) -> (1,1,1,1,1,1) -> (0,0,0,0,0,0). 
+
+Additional information about the Ducci sequence can be found in [this writeup](http://www.cut-the-knot.org/Curriculum/Algebra/GregBrockman/GregBrockmanDucciSequences.shtml) from Greg Brockman, a mathematics student. 
+
+It's kind of fun to play with the code once you get it working and to try and find sequences that never collapse and repeat. One I found was (2, 4126087, 4126085), it just goes on and on.
+
+It's also kind of fun to plot these in 3 dimensions. [Here](https://monkey.org/~jose/graphing/ducci/index2.html) is an example of the sequence ""(129,12,155,772,63,4)"" turned into 2 sets of lines (x1, y1, z1, x2, y2, z2). 
+
+# Input Description
+
+You'll be given an *n*-tuple, one per line. Example:
+
+    (0, 653, 1854, 4063)
+
+# Output Description
+
+Your program should emit the number of steps taken to get to either an all 0 tuple or when it enters a stable repeating pattern. Example:
+
+    [0; 653; 1854; 4063]
+    [653; 1201; 2209; 4063]
+    [548; 1008; 1854; 3410]
+    [460; 846; 1556; 2862]
+    [386; 710; 1306; 2402]
+    [324; 596; 1096; 2016]
+    [272; 500; 920; 1692]
+    [228; 420; 772; 1420]
+    [192; 352; 648; 1192]
+    [160; 296; 544; 1000]
+    [136; 248; 456; 840]
+    [112; 208; 384; 704]
+    [96; 176; 320; 592]
+    [80; 144; 272; 496]
+    [64; 128; 224; 416]
+    [64; 96; 192; 352]
+    [32; 96; 160; 288]
+    [64; 64; 128; 256]
+    [0; 64; 128; 192]
+    [64; 64; 64; 192]
+    [0; 0; 128; 128]
+    [0; 128; 0; 128]
+    [128; 128; 128; 128]
+    [0; 0; 0; 0]
+    24 steps
+
+# Challenge Input
+
+    (1, 5, 7, 9, 9)
+    (1, 2, 1, 2, 1, 0)
+    (10, 12, 41, 62, 31, 50)
+    (10, 12, 41, 62, 31)"
